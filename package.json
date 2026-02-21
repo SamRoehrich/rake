@@ -11,6 +11,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "effect": "^3.19.17"
+    "effect": "^3.19.18"
   }
 }

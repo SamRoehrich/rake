@@ -1,4 +1,4 @@
-import { Effect, Data, Context, Layer } from 'effect'
+import { Effect, Data, Context, Layer, Schema } from 'effect'
 import { Config, ConfigLive } from '../services/config'
 import { Http, HttpLive } from '../services/http'
 export const TAILSCALE_API_URL = "https://api.tailscale.com/api/v2"
@@ -19,8 +19,7 @@ export const TailscaleHttpClientLive = Layer.effect(
   Effect.gen(function*() {
     const config = yield* Config
     const http = yield* Http
-    const { tailnetDomain, tailscaleToken, tag } = yield* Effect.all({
-      tailnetDomain: config.get("TAILNET_DOMAIN"),
+    const { tailscaleToken, tag } = yield* Effect.all({
       tag: config.get("TAG"),
       tailscaleToken: config.get("TAILSCALE_TOKEN")
     }).pipe(Effect.catchTag('ConfigError', (e) => Effect.fail(new TailscaleHttpClientError({
@@ -32,7 +31,7 @@ export const TailscaleHttpClientLive = Layer.effect(
       'Authorization': `Bearer ${tailscaleToken}`
     }
 
-    const listContainers = http.get(`/tailnet/${tailnetDomain}/devices?tags=${tag}`, {
+    const listContainers = http.get(`/tailnet/-/devices?tags=${tag}`, {
       headers: baseOptions
     }).pipe(Effect.catchTag('HttpNetworkError', (e) => Effect.fail(new TailscaleHttpClientError({
       message: "Tailscale network error",
@@ -56,3 +55,7 @@ export const TailscaleHttpClientLive = Layer.effect(
   })
 ).pipe(Layer.provide(HttpLive(TAILSCALE_API_URL)), Layer.provide(ConfigLive))
 
+const TailscaleContainer = Schema.Struct({
+  addresses: Schema.Array(Schema.String),
+  name: Schema.String
+})
