@@ -10,17 +10,17 @@ type AgentServerImpl = {
 }
 class AgentServer extends Context.Tag("oc-server-discovery/opencode/servers/AgentServer")<AgentServer, AgentServerImpl>() { }
 
-const AgentServerLive = Layer.effect(
-  AgentServer,
-  Effect.gen(function*() {
-    const tailscale = yield* TailscaleHttpClient
-    const containers = yield* tailscale.listContainers
-    yield* Console.log({ containers })
-    // const servers = yield* Effect.tryPromise()
-
-
-    return {
-      getServer
-    }
-  })
-)
+// const AgentServerLive = Layer.effect(
+//   AgentServer,
+//   Effect.gen(function*() {
+//     const tailscale = yield* TailscaleHttpClient
+//     const containers = yield* tailscale.getContainer()
+//     yield* Console.log({ containers })
+//     // const servers = yield* Effect.tryPromise()
+//
+//
+//     return {
+//       getServer
+//     }
+//   })
+// )

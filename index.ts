@@ -10,12 +10,14 @@ Effect.runSync(program)
 // const runnableGetServer = (req: BunRequest) => getServer(req).pipe(Effect.provide(ConfigLive))
 const tailscaleListContainersProgram = Effect.gen(function*() {
   const tailscale = yield* TailscaleHttpClient
-  return yield* tailscale.listContainers
+  const containers = yield* tailscale.listContainers
+  return Response.json(containers)
 }).pipe(Effect.provide(TailscaleHttpClientLive))
 
 const tailscaleGetContainerProgram = (id: string) => Effect.gen(function*() {
   const tailscale = yield* TailscaleHttpClient
-  return yield* tailscale.getContainer(id)
+  const container = yield* tailscale.getContainer(id)
+  return Response.json(container)
 }).pipe(Effect.provide(TailscaleHttpClientLive))
 
 serve({

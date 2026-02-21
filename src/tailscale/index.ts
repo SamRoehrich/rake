@@ -9,8 +9,8 @@ class TailscaleHttpClientError extends Data.TaggedError("TailscaleHttpClientErro
 }> { }
 
 type TailscaleHttpClientImpl = {
-  listContainers: Effect.Effect<Response, TailscaleHttpClientError>,
-  getContainer: (id: string) => Effect.Effect<Response, TailscaleHttpClientError>
+  listContainers: Effect.Effect<TailscaleDevices, TailscaleHttpClientError>,
+  getContainer: (id: string) => Effect.Effect<TailscaleContainer, TailscaleHttpClientError>
 }
 export class TailscaleHttpClient extends Context.Tag("oc-server-discovery/tailscale/index/TailscaleHttpClient")<TailscaleHttpClient, TailscaleHttpClientImpl>() { }
 
@@ -27,35 +27,65 @@ export const TailscaleHttpClientLive = Layer.effect(
       e
     }))))
 
-    const baseOptions = {
+    const headers = {
       'Authorization': `Bearer ${tailscaleToken}`
     }
 
-    const listContainers = http.get(`/tailnet/-/devices?tags=${tag}`, {
-      headers: baseOptions
-    }).pipe(Effect.catchTag('HttpNetworkError', (e) => Effect.fail(new TailscaleHttpClientError({
-      message: "Tailscale network error",
-      e
-    }))), Effect.catchTag('HttpRequestError', (e) => Effect.fail(new TailscaleHttpClientError({
-      message: 'Tailscale Request error',
-      e
-    }))))
+    const listContainers = http.getJson(`/tailnet/-/devices?tags=${tag}`, { headers }, TailscaleDevicesSchema).pipe(
+      Effect.catchTags({
+        HttpJsonError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "res.json() failed from the tailscale API",
+          e
+        })),
+        HttpNetworkError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "HTTP Network error in tailscale http client",
+          e
+        })),
+        HttpRequestError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "HTTP request error in tailscale HTTP client",
+          e
+        })),
+        ParseError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "Tailscale resposne did not meet TailscaleContainer schema requirements",
+          e
+        }))
+      })
+    )
 
-    const getContainer = (id: string) => http.get(`/device/${id}`, {
-      headers: baseOptions
-    }).pipe(Effect.catchTag('HttpNetworkError', (e) => Effect.fail(new TailscaleHttpClientError({
-      message: "Tailscale network error",
-      e
-    }))), Effect.catchTag('HttpRequestError', (e) => Effect.fail(new TailscaleHttpClientError({
-      message: 'Tailscale Request error',
-      e
-    }))))
+    const getContainer = (id: string) => http.getJson(`/device/${id}`, { headers }, TailscaleContainerSchema).pipe(
+      Effect.catchTags({
+        HttpJsonError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "res.json() failed from the tailscale API",
+          e
+        })),
+        HttpNetworkError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "HTTP Network error in tailscale http client",
+          e
+        })),
+        HttpRequestError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "HTTP request error in tailscale HTTP client",
+          e
+        })),
+        ParseError: (e) => Effect.fail(new TailscaleHttpClientError({
+          message: "Tailscale resposne did not meet TailscaleContainer schema requirements",
+          e
+        }))
+      })
+    )
+    return { getContainer, listContainers }
+  }
+  )).pipe(Layer.provide(HttpLive(TAILSCALE_API_URL)), Layer.provide(ConfigLive))
 
-    return { listContainers, getContainer }
-  })
-).pipe(Layer.provide(HttpLive(TAILSCALE_API_URL)), Layer.provide(ConfigLive))
-
-const TailscaleContainer = Schema.Struct({
+const TailscaleContainerSchema = Schema.Struct({
   addresses: Schema.Array(Schema.String),
-  name: Schema.String
+  name: Schema.String,
+  id: Schema.String
 })
+
+const TailscaleDevicesSchema = Schema.Struct({
+  devices: Schema.Array(TailscaleContainerSchema)
+})
+
+type TailscaleContainer = typeof TailscaleContainerSchema.Type
+type TailscaleDevices = typeof TailscaleDevicesSchema.Type
+
