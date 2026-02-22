@@ -1,17 +1,21 @@
-import { Effect, Console } from 'effect'
+import { Effect, Console, Layer } from 'effect'
 import { serve } from 'bun'
-import { TailscaleHttpClient, TailscaleHttpClientLive } from './src/tailscale'
-import { OpenCode, OpenCodeLive } from './src/opencode'
+import { TailscaleHttpClient, TailscaleHttpClientLive } from './src/services/tailscale'
+import { OpenCode, OpenCodeLive } from './src/services/opencode'
 
 const program = Console.log('Hello, Effect')
 
 Effect.runSync(program)
 
+const AppLayer = OpenCodeLive.pipe(
+  Layer.provide(TailscaleHttpClientLive)
+)
+
 const runnableGetServer = (id: string) => Effect.gen(function*() {
   const opencode = yield* OpenCode
   const servers = yield* opencode.getAllSessions(id)
   return Response.json(servers)
-}).pipe(Effect.provide(OpenCodeLive), Effect.provide(TailscaleHttpClientLive))
+}).pipe(Effect.provide(AppLayer))
 
 const tailscaleListContainersProgram = Effect.gen(function*() {
   const tailscale = yield* TailscaleHttpClient

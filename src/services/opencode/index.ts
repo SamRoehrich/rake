@@ -11,6 +11,7 @@ class OpenCodeSDKError extends Data.TaggedError("AgentServerError")<{
 type OpenCodeImpl = {
   getAllSessions: (containerId: string) => Effect.Effect<Session[], OpenCodeSDKError>;
 }
+
 export class OpenCode extends Context.Tag("oc-server-discovery/opencode/index/OpenCode")<OpenCode, OpenCodeImpl>() { }
 
 export const OpenCodeLive = Layer.effect(

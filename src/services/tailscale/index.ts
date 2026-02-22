@@ -1,6 +1,6 @@
 import { Effect, Data, Context, Layer, Schema } from 'effect'
-import { Config, ConfigLive } from '../services/config'
-import { Http, HttpLive } from '../services/http'
+import { Config, ConfigLive } from '../config'
+import { Http, HttpLive } from '../http'
 export const TAILSCALE_API_URL = "https://api.tailscale.com/api/v2"
 
 class TailscaleHttpClientError extends Data.TaggedError("TailscaleHttpClientError")<{
