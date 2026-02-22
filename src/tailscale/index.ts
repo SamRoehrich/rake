@@ -79,7 +79,8 @@ export const TailscaleHttpClientLive = Layer.effect(
 const TailscaleContainerSchema = Schema.Struct({
   addresses: Schema.Array(Schema.String),
   name: Schema.String,
-  id: Schema.String
+  id: Schema.String,
+  hostname: Schema.String
 })
 
 const TailscaleDevicesSchema = Schema.Struct({

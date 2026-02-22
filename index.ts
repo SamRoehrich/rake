@@ -1,13 +1,18 @@
 import { Effect, Console } from 'effect'
 import { serve } from 'bun'
 import { TailscaleHttpClient, TailscaleHttpClientLive } from './src/tailscale'
+import { OpenCode, OpenCodeLive } from './src/opencode'
 
 const program = Console.log('Hello, Effect')
 
 Effect.runSync(program)
 
-// const runnableGetServers = getServers.pipe(Effect.provide(ConfigLive))
-// const runnableGetServer = (req: BunRequest) => getServer(req).pipe(Effect.provide(ConfigLive))
+const runnableGetServer = (id: string) => Effect.gen(function*() {
+  const opencode = yield* OpenCode
+  const servers = yield* opencode.getAllSessions(id)
+  return Response.json(servers)
+}).pipe(Effect.provide(OpenCodeLive), Effect.provide(TailscaleHttpClientLive))
+
 const tailscaleListContainersProgram = Effect.gen(function*() {
   const tailscale = yield* TailscaleHttpClient
   const containers = yield* tailscale.listContainers
@@ -23,13 +28,9 @@ const tailscaleGetContainerProgram = (id: string) => Effect.gen(function*() {
 serve({
   port: 8080,
   routes: {
-    // CONTAINERS
     '/containers': () => Effect.runPromise(tailscaleListContainersProgram),
     '/container/:id': (req) => Effect.runPromise(tailscaleGetContainerProgram(req.params.id)),
-
-    // OPENCODE Servers
-    // '/servers': () => Effect.runPromise(runnableGetServers),
-    // '/server/:id': (req) => Effect.runPromise(runnableGetServer(req))
+    '/server/:id': (req) => Effect.runPromise(runnableGetServer(req.params.id))
   },
 })
 
