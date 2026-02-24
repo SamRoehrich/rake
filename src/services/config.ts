@@ -1,7 +1,7 @@
 import { env } from 'bun'
 import { Context, Data, Effect, Layer } from 'effect'
 
-class ConfigError extends Data.TaggedError("ConfigError")<{}> { }
+export class ConfigError extends Data.TaggedError("ConfigError")<{}> { }
 
 type ConfigImpl = {
   readonly get: (key: string) => Effect.Effect<string, ConfigError, never>

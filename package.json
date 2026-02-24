@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@opencode-ai/sdk": "^1.2.10",
+    "@types/dockerode": "^4.0.1",
+    "dockerode": "^4.0.9",
     "effect": "^3.19.18"
   }
 }
