@@ -17,7 +17,7 @@ export class ContainerError extends Data.TaggedError("ContainerError")<{
 }> { };
 
 type ContainerImpl = {
-  create: Effect.Effect<C, ContainerBuildError | ContainerCreateError>;
+  create: (options: CreateContainerOptions) => Effect.Effect<C, ContainerBuildError | ContainerCreateError>;
   // ping: Effect.Effect<C, ContainerError>;
   // pause: Effect.Effect<C, ContainerError>;
   // details: Effect.Effect<C, ContainerError>;
@@ -33,3 +33,7 @@ export const ContainerStruct = Schema.Struct({
 
 export type C = typeof ContainerStruct.Type
 
+export type CreateContainerOptions = {
+  name: string;
+  command: string[];
+}
