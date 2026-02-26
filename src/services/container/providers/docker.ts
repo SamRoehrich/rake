@@ -18,7 +18,48 @@ export const ContainerLive = Layer.effect(
         })))
       )
 
-      const container = yield* Effect.tryPromise({
+      const tsAuthKey = yield* config.get("TAILSCALE_AUTH_KEY").pipe(
+        Effect.catchTag('ConfigError', (e) => Effect.fail(new ContainerCreateError({
+          message: "Failed to get tsAuthKey",
+          e
+        })))
+      )
+
+      const tailscaleContainer = yield* Effect.tryPromise({
+        try: () => docker.createContainer({
+          Image: 'tailscale/tailscale:latest',
+          name: `ts-${options.name}`,
+          Env: [
+            `TS_AUTHKEY=${tsAuthKey}`,
+            "TS_STATE_DIR=var/lib/tailscale/",
+            "TS_USERSPACE=false"
+          ],
+          HostConfig: {
+            CapAdd: ["NET_ADMIN", "NET_RAW"],
+            Devices: [{ PathOnHost: "/dev/net/tun", PathInContainer: "/dev/net/tun", CgroupPermissions: "rwm" }],
+            Binds: [`ts-state-${options.name}:/var/lib/tailscale`],
+          },
+          Labels: {
+            "managed-by": "oc-server-discovery",
+            "tailscale-sidecar": "true",
+          },
+        }),
+        catch: (e) => new ContainerCreateError({
+          message: "Failed to create tailscale sidecar container",
+          e
+        })
+      })
+
+
+      yield* Effect.tryPromise({
+        try: () => tailscaleContainer.start(),
+        catch: (e) => new ContainerCreateError({
+          message: "Failed to start docker sidecar",
+          e
+        })
+      })
+
+      const sandboxContainer = yield* Effect.tryPromise({
         try: () => docker.createContainer({
           Image: imageName,
           name: options.name,
@@ -34,14 +75,14 @@ export const ContainerLive = Layer.effect(
       })
 
       yield* Effect.tryPromise({
-        try: () => container.start(),
+        try: () => sandboxContainer.start(),
         catch: (e) => new ContainerCreateError({
           message: "Failed to start container",
           e
         })
       })
 
-      return yield* Schema.decodeUnknown(ContainerStruct)({ id: container.id, status: "creating" }).pipe(
+      return yield* Schema.decodeUnknown(ContainerStruct)({ id: sandboxContainer.id, status: "creating" }).pipe(
         Effect.mapError((e) => new ContainerCreateError({
           message: "Failed to parse container after creating",
           e

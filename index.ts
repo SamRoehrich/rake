@@ -30,10 +30,14 @@ const runnableCreateContainer = (req: BunRequest) => Effect.gen(function*() {
   const options = yield* Schema.decodeUnknown(CreateContainerOptions)(body).pipe(
     Effect.mapError((e) => new Response(`Invalid container options: ${e.message}`, { status: 400 }))
   )
-  const newContainer = yield* container.create(options).pipe(Effect.mapError((e) =>
-    new Response(`Failed to create container: ${e.message}`, { status: 500 })
-  ))
-  return Response.json(newContainer)
+  return yield* container.create(options).pipe(Effect.matchEffect({
+    onSuccess: (c) => Effect.succeed(Response.json(c)),
+    onFailure: (e) => Effect.succeed(Response.json({
+      message: e.message,
+      tag: e._tag,
+      e: e.e
+    }))
+  }))
 }).pipe(Effect.provide(ContainerLayer))
 
 const tailscaleListContainersProgram = Effect.gen(function*() {
