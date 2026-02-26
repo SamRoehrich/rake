@@ -33,7 +33,11 @@ export const ContainerStruct = Schema.Struct({
 
 export type C = typeof ContainerStruct.Type
 
-export type CreateContainerOptions = {
-  name: string;
-  command: string[];
-}
+const CreateContainerCommandOption = Schema.Array(Schema.String)
+
+export const CreateContainerOptions = Schema.Struct({
+  name: Schema.String,
+  command: CreateContainerCommandOption
+});
+
+export type CreateContainerOptions = typeof CreateContainerOptions.Type
