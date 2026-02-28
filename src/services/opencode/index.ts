@@ -8,8 +8,12 @@ class OpenCodeSDKError extends Data.TaggedError("AgentServerError")<{
   containerId: string
 }> { }
 
+export type SessionWithProject = Session & {
+  projectPath: string | null
+}
+
 type OpenCodeImpl = {
-  getAllSessions: (containerId: string) => Effect.Effect<Session[], OpenCodeSDKError>;
+  getAllSessions: (containerId: string) => Effect.Effect<SessionWithProject[], OpenCodeSDKError>;
 }
 
 export class OpenCode extends Context.Tag("oc-server-discovery/opencode/index/OpenCode")<OpenCode, OpenCodeImpl>() { }
@@ -36,7 +40,7 @@ export const OpenCodeLive = Layer.effect(
           if (!sessions?.data?.length) {
             throw new Error("No sessions in container")
           }
-          return sessions
+          return sessions.data
         },
         catch: (e) => new OpenCodeSDKError({
           message: "Failed to get sessions",
@@ -44,7 +48,28 @@ export const OpenCodeLive = Layer.effect(
           containerId
         })
       });
-      return sessions.data
+      const projectPaths = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await client.project.list()
+          const projects = result.data ?? []
+          const map = new Map<string, string>()
+          for (const project of projects) {
+            if (project.id && project.worktree) {
+              map.set(project.id, project.worktree)
+            }
+          }
+          return map
+        },
+        catch: () => new OpenCodeSDKError({
+          message: "Failed to list projects",
+          cause: null,
+          containerId
+        })
+      }).pipe(Effect.catchAll(() => Effect.succeed(new Map<string, string>())));
+      return sessions.map((session) => ({
+        ...session,
+        projectPath: projectPaths.get(session.projectID) ?? null,
+      }))
     })
     return {
       getAllSessions

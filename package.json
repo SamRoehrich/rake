@@ -3,6 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "api:dev": "bun run index.ts",
+    "web:dev": "bun run --cwd apps/web dev",
+    "web:build": "bun run --cwd apps/web build",
+    "web:start": "bun run --cwd apps/web start"
+  },
   "devDependencies": {
     "@effect/language-service": "^0.73.1",
     "@types/bun": "latest"
