@@ -14,8 +14,8 @@ function StatusDot({ status }: { status: SessionEntry["containerStatus"] }) {
   return (
     <span
       className={`inline-block h-2 w-2 rounded-full ${status === "online"
-          ? "bg-emerald-400 animate-pulse-dot"
-          : "bg-amber-400"
+        ? "bg-emerald-400 animate-pulse-dot"
+        : "bg-amber-400"
         }`}
     />
   )
@@ -33,7 +33,6 @@ function getSessionUrl(session: SessionEntry) {
     ? btoa(session.projectPath).replace(/=+$/, "")
     : null
 
-  console.log({ encodedPath })
   if (!encodedPath) {
     return null
   }
