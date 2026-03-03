@@ -1,3 +1,5 @@
+// GENERATED
+// if there are references to `relations` delete them.
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
