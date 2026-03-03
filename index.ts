@@ -6,6 +6,8 @@ import { Container, CreateContainerOptions } from './src/services/container'
 import { ContainerLive } from './src/services/container/providers/docker'
 import { ConfigLive } from './src/services/config'
 
+import { auth } from "./src/lib/auth"
+
 const program = Console.log('Hello, Effect')
 
 Effect.runSync(program)
@@ -55,6 +57,11 @@ const tailscaleGetContainerProgram = (id: string) => Effect.gen(function*() {
 serve({
   port: 8080,
   routes: {
+    '/api/auth/*': {
+      GET: (req) => auth.handler(req),
+      POST: (req) => auth.handler(req),
+      OPTIONS: (req) => auth.handler(req),
+    },
     '/containers': () => Effect.runPromise(tailscaleListContainersProgram),
     '/container/create': { POST: (req) => Effect.runPromise(runnableCreateContainer(req)) },
     '/container/:id': (req) => Effect.runPromise(tailscaleGetContainerProgram(req.params.id)),
