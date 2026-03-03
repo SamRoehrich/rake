@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import * as authSchema from "../services/database/auth-schema";
 
 // We have to create our own DB instance for auth and one for Effect. This is not ideal
 // but is the pattern we are taking because I want to use Effect for the business logic
@@ -18,5 +19,15 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   database: drizzleAdapter(authDb, {
     provider: "pg",
+    schema: authSchema
   }),
+  emailAndPassword: {
+    enabled: true
+  },
+  socialProviders: {
+    "github": {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!
+    }
+  }
 });

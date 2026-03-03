@@ -7,11 +7,7 @@
     "api:dev": "bun run index.ts",
     "web:dev": "bun run --cwd apps/web dev",
     "web:build": "bun run --cwd apps/web build",
-    "web:start": "bun run --cwd apps/web start",
-    "auth:generate": "bunx --bun auth@latest generate \
-      --config ./src/lib/auth.ts \
-      --output ./src/services/database/auth-schema.ts \
-      --yes"
+    "web:start": "bun run --cwd apps/web start"
   },
   "devDependencies": {
     "@effect/language-service": "^0.73.1",
