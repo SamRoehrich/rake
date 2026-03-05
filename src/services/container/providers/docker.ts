@@ -2,11 +2,15 @@ import { Layer, Effect, Schema } from "effect"
 import { Config } from '../../config'
 import { Container, ContainerCreateError, ContainerStruct, type CreateContainerOptions } from ".."
 import Dockerode from "dockerode"
+import { DB } from "../../database"
+import { containers } from "../../database/schemas/relations"
+import { ContainerInsert } from "../../database/schemas/container"
 
 export const ContainerLive = Layer.effect(
   Container,
   Effect.gen(function*() {
     const config = yield* Config
+    const db = yield* DB
     const docker = new Dockerode()
     const create = (options: CreateContainerOptions) => Effect.gen(function*() {
       // const internalPort = 4096
@@ -81,6 +85,13 @@ export const ContainerLive = Layer.effect(
           e
         })
       })
+
+      const parsedContainer = yield* Schema.decodeUnknown(ContainerInsert)({ id: sandboxContainer.id, hostname: }).pipe(
+        Effect.mapError((e) => new ContainerCreateError({
+          message: "Error creating sandbox container",
+          e
+        }))
+      )
 
       return yield* Schema.decodeUnknown(ContainerStruct)({ id: sandboxContainer.id, status: "creating" }).pipe(
         Effect.mapError((e) => new ContainerCreateError({

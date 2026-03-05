@@ -1,11 +1,8 @@
-import * as PgDrizzle from 'drizzle-orm/effect-postgres';
 import { PgClient } from '@effect/sql-pg';
-import * as Effect from 'effect/Effect';
 import * as Redacted from 'effect/Redacted';
-import { sql } from 'drizzle-orm';
 import { types } from 'pg';
 
-const PgClientLive = PgClient.layer({
+export const PgClientLive = PgClient.layer({
   url: Redacted.make(process.env.DATABASE_URL!),
   types: {
     getTypeParser: (typeId, format) => {
@@ -16,12 +13,4 @@ const PgClientLive = PgClient.layer({
     },
   },
 });
-
-const program = Effect.gen(function*() {
-  const db = yield* PgDrizzle.makeWithDefaults();
-  const result = yield* db.execute<{ id: number }>(sql`SELECT 1 as id`);
-  console.log(result);
-});
-// Run the program with the PgClient layer
-export const runnablePg = Effect.runPromise(program.pipe(Effect.provide(PgClientLive)));
 
