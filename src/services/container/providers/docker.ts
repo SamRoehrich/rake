@@ -1,9 +1,9 @@
-import { Layer, Effect, Schema } from "effect"
+import { Layer, Effect, Schema, Schedule } from "effect"
 import { Config } from '../../config'
-import { Container, ContainerCreateError, ContainerStruct, type CreateContainerOptions } from ".."
+import { Container, ContainerError, ContainerCreateError, ContainerStruct, type CreateContainerOptions } from ".."
 import Dockerode from "dockerode"
 import { DB } from "../../database"
-import { containers } from "../../database/schemas/relations"
+import { containers } from "../../database/schemas"
 import { ContainerInsert } from "../../database/schemas/container"
 
 export const ContainerLive = Layer.effect(
@@ -86,12 +86,33 @@ export const ContainerLive = Layer.effect(
         })
       })
 
-      const parsedContainer = yield* Schema.decodeUnknown(ContainerInsert)({ id: sandboxContainer.id, hostname: }).pipe(
-        Effect.mapError((e) => new ContainerCreateError({
-          message: "Error creating sandbox container",
+      const getContainerStatus = Effect.tryPromise({
+        try: () => sandboxContainer.inspect(),
+        catch: (e) => new ContainerError({
+          message: "Failed to get container details",
           e
-        }))
+        })
+      })
+
+      const containerInfo = yield* getContainerStatus.pipe(
+        Effect.flatMap((value) => (
+          value.State.Running ? Effect.succeed(value) : Effect.fail(new ContainerError({
+            message: "Container not started yet",
+            e: "ContainerNotStarted"
+          }))
+        )),
+        Effect.retry({
+          schedule: Schedule.spaced("100 millis"),
+          until: (e) => e.e === "ContainerNotStarted"
+        }),
+        Effect.timeout("5 seconds")
       )
+
+      yield* db.insert(containers).values({
+        name: containerInfo.Name,
+        hostname: containerInfo.Config.Hostname,
+        ip: containerInfo.NetworkSettings.Networks[0]?.IPAddress || ""
+      })
 
       return yield* Schema.decodeUnknown(ContainerStruct)({ id: sandboxContainer.id, status: "creating" }).pipe(
         Effect.mapError((e) => new ContainerCreateError({
@@ -99,7 +120,18 @@ export const ContainerLive = Layer.effect(
           e
         }))
       )
-    })
+    }).pipe(
+      Effect.catchTags({
+        TimeoutException: (e) => new ContainerError({
+          message: "Timeout occured",
+          e
+        }),
+        EffectDrizzleQueryError: (e) => new ContainerError({
+          message: "Failed to add container to DB",
+          e
+        })
+      })
+    )
     return {
       create
     }

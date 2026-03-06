@@ -13,7 +13,7 @@ export class ContainerCreateError extends Data.TaggedError("ContainerError")<{
 
 export class ContainerError extends Data.TaggedError("ContainerError")<{
   message: string;
-  e: Error;
+  e: unknown;
 }> { };
 
 type ContainerImpl = {
