@@ -1,4 +1,4 @@
-import { Context, Data, Layer, type Effect } from 'effect'
+import { Context, Data, type Effect } from 'effect'
 import { auth } from '../../lib/auth'
 
 type Session = typeof auth.$Infer.Session

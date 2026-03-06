@@ -1,5 +1,6 @@
 import { Context, Data, Effect, Schema } from "effect"
 import { ConfigError } from "../config";
+import type { CurrentUser } from "../user";
 
 export class ContainerBuildError extends Data.TaggedError("ContainerError")<{
   message: string;
@@ -17,7 +18,7 @@ export class ContainerError extends Data.TaggedError("ContainerError")<{
 }> { };
 
 type ContainerImpl = {
-  create: (options: CreateContainerOptions) => Effect.Effect<C, ContainerBuildError | ContainerCreateError>;
+  create: (options: CreateContainerOptions) => Effect.Effect<C, ContainerBuildError | ContainerCreateError, CurrentUser>;
   // ping: Effect.Effect<C, ContainerError>;
   // pause: Effect.Effect<C, ContainerError>;
   // details: Effect.Effect<C, ContainerError>;

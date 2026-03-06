@@ -1,12 +1,12 @@
 import { defineRelations } from "drizzle-orm";
 import { containers } from './container'
-import { users } from "./user";
+import { user } from "./auth-schema";
 
-export const relations = defineRelations({ containers, users }, (r) => ({
+export const relations = defineRelations({ containers, user }, (r) => ({
   containers: {
-    creator: r.one.users({
-      from: r.containers.userId,
-      to: r.users.id
+    creator: r.one.user({
+      from: r.containers.creatorUserId,
+      to: r.user.id
     })
   }
 }))

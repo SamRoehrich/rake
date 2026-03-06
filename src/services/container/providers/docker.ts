@@ -4,7 +4,7 @@ import { Container, ContainerError, ContainerCreateError, ContainerStruct, type 
 import Dockerode from "dockerode"
 import { DB } from "../../database"
 import { containers } from "../../database/schemas"
-import { ContainerInsert } from "../../database/schemas/container"
+import { CurrentUser } from "../../user"
 
 export const ContainerLive = Layer.effect(
   Container,
@@ -13,6 +13,7 @@ export const ContainerLive = Layer.effect(
     const db = yield* DB
     const docker = new Dockerode()
     const create = (options: CreateContainerOptions) => Effect.gen(function*() {
+      const user = yield* CurrentUser
       // const internalPort = 4096
       // const externalPort = 4096 // TODO: make this random
       const imageName = yield* config.get("IMAGE_NAME").pipe(
@@ -111,7 +112,8 @@ export const ContainerLive = Layer.effect(
       yield* db.insert(containers).values({
         name: containerInfo.Name,
         hostname: containerInfo.Config.Hostname,
-        ip: containerInfo.NetworkSettings.Networks[0]?.IPAddress || ""
+        ip: containerInfo.NetworkSettings.Networks[0]?.IPAddress || "",
+        creatorUserId: user.id
       })
 
       return yield* Schema.decodeUnknown(ContainerStruct)({ id: sandboxContainer.id, status: "creating" }).pipe(

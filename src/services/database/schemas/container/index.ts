@@ -6,7 +6,7 @@ export const containers = pgTable("containers", {
   name: varchar({ length: 255 }).notNull(),
   hostname: varchar({ length: 255 }).notNull(),
   ip: varchar({ length: 255 }).notNull(),
-  userId: integer('user_id')
+  creatorUserId: varchar('user_id', { length: 255 }).notNull()
 })
 
 export const ContainerInsert = createInsertSchema(containers)
